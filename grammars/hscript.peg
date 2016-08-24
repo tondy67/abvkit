@@ -1,0 +1,689 @@
+//=========================================================================
+//  !!! UNDER DEVELOPMENT !!! DO NOT USE !!!
+//=========================================================================
+//=========================================================================
+//  Hscript PEG
+//=========================================================================
+
+//=========================================================================
+//  Compilation
+//=========================================================================
+
+Compilation
+    = Spacing CompilationUnit EOT;
+
+
+
+//  Input Elements and Tokens
+
+
+EOT = !_ ;
+
+
+//  Spacing
+
+
+Spacing
+    = ( [ \t\r\n\u000C]+  // WhiteSpace
+      / "/*" _*+ "*/"     // TraditionalComment
+      / "//" _*+ [\r\n]   // EndOfLineComment
+      )* ;
+
+
+//  Identifiers
+
+Identifier  = !Keyword Letter LetterOrDigit* Spacing ;
+
+Letter = [a-z] / [A-Z] / [_$] ;
+
+LetterOrDigit = [a-z] / [A-Z] / [0-9] / [_$] ;
+
+Digit  =  [0-9] / [_$] ;
+//  Keywords
+
+
+Keyword
+    = ( "break"
+		/ "case"
+		/ "catch"
+		/ "continue"
+		/ "default"
+		/ "do"
+		/ "else"
+		/ "false"
+		/ "for"
+		/ "function"
+		/ "if"
+		/ "in"
+		/ "new"
+//		/ "null"
+		/ "return"
+		/ "switch"
+		/ "throw"
+		/ "true"
+		/ "try"
+		/ "var"
+		/ "while"
+      ) !LetterOrDigit
+    ;
+
+FUNCTION     = "function"     !LetterOrDigit Spacing ;
+VAR          = "var"          !LetterOrDigit Spacing ;
+BOOL         = "Bool"         !LetterOrDigit Spacing ;
+BREAK        = "break"        !LetterOrDigit Spacing ;
+CASE         = "case"         !LetterOrDigit Spacing ;
+CATCH        = "catch"        !LetterOrDigit Spacing ;
+CONTINUE     = "continue"     !LetterOrDigit Spacing ;
+DEFAULT      = "default"      !LetterOrDigit Spacing ;
+DO           = "do"           !LetterOrDigit Spacing ;
+ELSE         = "else"         !LetterOrDigit Spacing ;
+FALSE        = "false"        !LetterOrDigit Spacing ;
+FLOAT        = "Float"        !LetterOrDigit Spacing ;
+ARRAY        = "Array"        !LetterOrDigit Spacing ;
+FOR          = "for"          !LetterOrDigit Spacing ;
+IN           = "in"           !LetterOrDigit Spacing ;
+IF           = "if"           !LetterOrDigit Spacing ;
+INT          = "Int"          !LetterOrDigit Spacing ;
+MAP          = "Map"          !LetterOrDigit Spacing ;
+NEW          = "new"          !LetterOrDigit Spacing ;
+NULL         = "Null"         !LetterOrDigit Spacing ;
+RETURN       = "return"       !LetterOrDigit Spacing ;
+SWITCH       = "switch"       !LetterOrDigit Spacing ;
+STRING       = "String"       !LetterOrDigit Spacing ;
+THROW        = "throw"        !LetterOrDigit Spacing ;
+TRUE         = "true"         !LetterOrDigit Spacing ;
+TRY          = "try"          !LetterOrDigit Spacing ;
+VOID         = "Void"         !LetterOrDigit Spacing ;
+WHILE        = "while"        !LetterOrDigit Spacing ;
+
+
+//  JLS 3.10  Literals
+
+
+Literal
+    = FloatLiteral
+    / IntegerLiteral          // May be a prefix of FloatLiteral
+    / BooleanLiteral
+    / CharLiteral
+    / StringLiteral
+    / NullLiteral
+    ;
+
+
+//  Integer Literals
+
+
+IntegerLiteral
+    = ( HexNumeral
+      / BinaryNumeral
+      / OctalNumeral            // May be a prefix of HexNumeral or BinaryNumeral
+      / DecimalNumeral          // May be a prefix of OctalNumeral
+      ) [lL]? Spacing
+    ;
+
+DecimalNumeral
+    = "0"
+    / [1-9]([_]*[0-9])*
+    ;
+
+HexNumeral
+    = ("0x" / "0X") HexDigits ;
+
+OctalNumeral
+    = "0" ([_]*[0-7])+ ;
+
+BinaryNumeral
+    = ("0b" / "0B") [01]([_]*[01])* ;
+
+
+//  Floatng-point Literals
+
+
+FloatLiteral
+    = ( HexadecimalFloatingPointLiteral
+      / DecimalFloatingPointLiteral   // May be a prefix of above
+      ) Spacing
+    ;
+
+DecimalFloatingPointLiteral
+    = Digits "." Digits?  Exponent? [fFdD]?
+    / "." Digits Exponent? [fFdD]?
+    / Digits Exponent [fFdD]?
+    / Digits Exponent? [fFdD]
+    ;
+
+Exponent
+    = [eE] [+\-]? Digits ;
+
+HexadecimalFloatingPointLiteral
+    = HexSignificand BinaryExponent [fFdD]? ;
+
+HexSignificand
+    = ("0x" / "0X") HexDigits? "." HexDigits
+    / HexNumeral "."?                           // May be a prefix of above
+    ;
+
+HexDigits
+    = HexDigit ([_]*HexDigit)* ;
+
+HexDigit
+    = [a-f] / [A-F] / [0-9] ;
+
+BinaryExponent
+    = [pP] [+\-]? Digits ;
+
+Digits
+    = [0-9]([_]*[0-9])* ;
+
+
+//  Boolean Literals
+
+
+BooleanLiteral
+    = TRUE
+    / FALSE
+    ;
+
+
+//  Character Literals
+
+
+CharLiteral
+    = "'" (Escape / !['\\\n\r] _) "'" Spacing            // this " keeps the editor happy
+    ;
+
+
+//  String Literals
+
+
+StringLiteral
+    = "\"" (Escape / !["\\\n\r] _)* "\"" Spacing         // this " keeps the editor happy
+    ;
+
+Escape
+    = "\\" ([btnfr"'\\] / OctalEscape / UnicodeEscape)   // this " keeps the editor happy
+    ;
+
+OctalEscape
+    = [0-3][0-7][0-7]
+    / [0-7][0-7]
+    / [0-7]
+    ;
+
+UnicodeEscape
+    = "u"+ HexDigit HexDigit HexDigit HexDigit ;
+
+
+//  The Null literal
+
+
+NullLiteral = NULL ;
+
+
+//  Separators
+
+
+COLON           =   ":"       Spacing ;
+COMMA           =   ","       Spacing ;
+DOT             =   "."       Spacing ;
+ELLIPSIS        =   "..."     Spacing ;
+LPAR            =   "("       Spacing ;
+LBRK            =   "["       Spacing ;
+RBRK            =   "]"       Spacing ;
+RPAR            =   ")"       Spacing ;
+LWING           =   "{"       Spacing ;
+RWING           =   "}"       Spacing ;
+SEMI            =   ";"       Spacing ;
+LT              =   "<"       Spacing ;
+GT              =   ">"       Spacing ;
+
+//  Operators
+//  The operators < and > is defined uder two names:
+//  LT and GT, respectively LPOINT and RPOINT.
+//  The last two are used in the type context, to emulate the translation
+//  rule given in JLS 3.2.
+
+
+AND             =   "&"![=&]  Spacing ;
+ANDAND          =   "&&"      Spacing ;
+ANDEQU          =   "&="      Spacing ;
+//ARROW           =   "->"      Spacing ;
+BANG            =   "!" ![=]  Spacing ;
+//BSR             =   ">>>"![=] Spacing ;
+//BSREQU          =   ">>>="    Spacing ;
+//COLON           =   ":" ![:]  Spacing ;
+DEC             =   "--"      Spacing ;
+DIV             =   "/" ![=]  Spacing ;
+DIVEQU          =   "/="      Spacing ;
+EQU             =   "=" ![=]  Spacing ;
+EQUAL           =   "=="      Spacing ;
+GE              =   ">="      Spacing ;
+//GT              =   ">"![=>]  Spacing ;
+HAT             =   "^"![=]   Spacing ;
+//HATEQU          =   "^="      Spacing ;
+INC             =   "++"      Spacing ;
+LE              =   "<="      Spacing ;
+//LT              =   "<"![=<]  Spacing ;
+MINUS           =   "-"![=\->]Spacing ;
+MINUSEQU        =   "-="      Spacing ;
+MOD             =   "%"![=]   Spacing ;
+//MODEQU          =   "%="      Spacing ;
+NOTEQUAL        =   "!="      Spacing ;
+OR              =   "|"![=|]  Spacing ;
+OREQU           =   "|="      Spacing ;
+OROR            =   "||"      Spacing ;
+PLUS            =   "+"![=+]  Spacing ;
+PLUSEQU         =   "+="      Spacing ;
+QUERY           =   "?"       Spacing ;
+SL              =   "<<"![=]  Spacing ;
+//SLEQU           =   "<<="     Spacing ;
+SR              =   ">>"![=>] Spacing ;
+//SREQU           =   ">>="     Spacing ;
+STAR            =   "*"![=]   Spacing ;
+STAREQU         =   "*="      Spacing ;
+//TILDE           =   "~"       Spacing ;
+
+
+//=========================================================================
+//  Types, Values and Variables
+//=========================================================================
+
+BasicType
+    = INT
+    / FLOAT
+    / BOOL
+    / STRING
+    ;
+
+//  Reference Types and Values
+
+
+ReferenceType
+    = ArrayType
+    / MapType
+    ;
+
+Type
+    = BasicType
+    / ReferenceType
+    ;
+
+ArrayType
+    = ARRAY LT (BasicType / ClassType) GT ;
+
+MapType
+    = MAP LT (BasicType / ClassType) GT ;
+
+ClassType
+    = Identifier (DOT Identifier)* ;
+
+TypeVariable
+    = Identifier ;
+
+Dim
+    = LBRK RBRK ;
+
+
+//  Type Variables
+
+
+//=========================================================================
+//  Names
+//=========================================================================
+
+QualIdent
+    = Identifier (DOT Identifier)* ;
+
+
+//  Compilation Units
+
+
+CompilationUnit
+    = BlockStatement* ;//  MethodDeclaration* ;
+
+//  Method Declarations
+
+
+MethodDeclaration
+    = MethodHeader MethodBody ;
+
+MethodHeader
+    = FUNCTION MethodDeclarator (COLON Result)?
+    ;
+
+MethodDeclarator
+    = Identifier LPAR FormalParameterList? RPAR ;
+
+FormalParameterList
+    = FormalParameter (COMMA FormalParameter)* ;
+
+FormalParameter
+    = Identifier COLON BasicType
+    ;
+
+Result
+    = VOID
+    ;
+
+MethodBody
+    = Block
+    / SEMI
+    ;
+
+//=========================================================================
+//  Arrays
+//=========================================================================
+
+//  Array Initializers
+
+ArrayInitializer
+    = LBRK VariableInitializerList? COMMA? RBRK ;
+
+VariableInitializerList
+    = VariableInitializer (COMMA VariableInitializer)* ;
+
+VariableInitializer
+    = Expression
+    / ArrayInitializer
+    ;
+
+//=========================================================================
+//  Blocks and Statements
+//=========================================================================
+
+//  Blocks
+
+
+Block
+    = LWING BlockStatements? RWING ;
+
+BlockStatements
+    = BlockStatement BlockStatement* ;
+
+BlockStatement
+    = LocalVariableDeclarationStatement
+    / Statement
+    / MethodInvocation
+    / MethodDeclaration
+    ;
+
+
+//  Local Variable Declaration Statements
+
+
+LocalVariableDeclarationStatement
+    = LocalVariableDeclaration SEMI ;
+
+LocalVariableDeclaration
+    = VAR  Identifier (COLON Type)? (EQU Literal)? ;
+
+
+//  Statements
+
+
+Statement
+    = Block
+    / IF ParExpression Statement (ELSE Statement)?
+    / BasicForStatement
+    / EnhancedForStatement
+    / WHILE ParExpression Statement
+    / DO Statement WHILE ParExpression SEMI
+    / TryStatement
+    / SWITCH ParExpression SwitchBlock
+    / ParExpression Block
+    / RETURN Expression? SEMI
+    / THROW Expression SEMI
+    / BREAK Identifier? SEMI
+    / CONTINUE Identifier? SEMI
+    / SEMI
+    / StatementExpression SEMI
+    / Identifier COLON Statement
+    ;
+
+
+//  Expression Statements
+//
+//  Each of MethodInvocation and ClassInstanceCreationExpression
+//  can be a prefix of the other one. Until a solution is found,
+//  they are replaced by Primary.
+
+
+StatementExpression
+    = Assignment 
+    / (INC / DEC)(Primary / QualIdent) 
+    / (Primary / QualIdent)(INC / DEC) 
+    / Primary 
+//    / MethodInvocation
+//    / ClassInstanceCreationExpression
+    ;
+
+MethodInvocation
+    = QualIdent Arguments ;
+
+//  The SWITCH Statement
+
+
+SwitchBlock
+    = LWING SwitchBlockStatementGroup* SwitchLabel* RWING ;
+
+SwitchBlockStatementGroup
+    = SwitchLabels BlockStatements ;
+
+SwitchLabels
+    = SwitchLabel SwitchLabel* ;
+
+SwitchLabel
+    = CASE LetterOrDigit COLON Statement 
+    / DEFAULT COLON Statement
+    ;
+
+//  The FOR Statement
+
+
+BasicForStatement
+    = FOR LPAR Identifier IN Expression RPAR Statement ;
+
+EnhancedForStatement
+    = FOR LPAR  Identifier IN Digit* Spacing ELLIPSIS Expression RPAR Statement ;
+
+
+//  The TRY Statement
+
+
+TryStatement
+    = TRY
+      ( Block CatchClause* 
+      )
+    ;
+
+CatchClause
+    = CATCH LPAR CatchFormalParameter RPAR Block ;
+
+CatchFormalParameter
+    = BasicType  ;
+
+//=========================================================================
+//  JLS 15  Expressions
+//=========================================================================
+
+//  JLS 15.2  Forms of Expression
+
+
+Expression
+    = AssignmentExpression
+    ;
+
+
+//  JLS 15.8  Primary Expression
+
+
+Primary
+    = PrimaryBase PrimaryRest* ;
+
+PrimaryBase
+    = Literal
+    / ParExpression
+    / NEW
+      ( ArrayCreator  // Array creation
+      )
+    / QualIdent
+      ( LBRK Expression RBRK // ArrayAccess
+      / Arguments  // MethodInvocation
+      / DOT
+        ( Identifier Arguments  // MethodInvocation
+        )
+      / COLON Identifier  // MethodReference
+      )
+    / ReferenceType COLON Identifier  // MethodReference
+    / ArrayType COLON NEW  // MethodReference
+    ;
+
+PrimaryRest
+    = DOT
+      ( Identifier Arguments  // MethodInvocation
+      / Identifier  // FieldAccess
+      )
+    / LBRK Expression RBRK  // ArrayAccess
+    / COLON Identifier  // MethodReference
+    ;
+
+ParExpression
+    = LPAR Expression RPAR ;
+
+
+//  Array Creation and Access Expressions
+
+
+ArrayCreator
+    = ArrayType DimExpr+ Dim*
+    / ArrayType  EQU  ArrayInitializer
+    ;
+
+DimExpr
+    = LBRK Expression RBRK ;
+
+// ArrayAccess
+//    = Primary LBRK Expression RBRK
+//    / QualIdent LBRK Expression RBRK
+//    ;
+
+
+//  JLS 15.11  Field Access Expressions
+
+
+// FieldAccess
+//    = Primary DOT Identifier
+//    / SUPER DOT Identifier
+//    / QualIdent DOT SUPER DOT Identifier
+//    ;
+
+
+//  JLS 15.12  Method Invocation Expressions
+
+
+// MethodInvocation
+//     = QualIdent Arguments
+//     / Primary DOT TypeArguments? Identifier Arguments
+//     / QualIdent DOT TypeArguments Identifier Arguments
+//     / SUPER DOT TypeArguments? Identifier Arguments
+//     / QualIdent DOT SUPER DOT TypeArguments? Identifier Arguments
+//     ;
+
+Arguments
+    = LPAR ArgumentList? RPAR ;
+
+ArgumentList
+    = Expression (COMMA Expression)* ;
+
+
+//  Unary Operators
+
+
+UnaryExpression
+    = (INC / DEC)(Primary / QualIdent)
+    / PLUS UnaryExpression
+    / MINUS UnaryExpression
+    / UnaryExpressionNotPlusMinus
+    ;
+
+UnaryExpressionNotPlusMinus
+    = BANG UnaryExpression
+    / (Primary / QualIdent) (INC / DEC)?
+    ;
+
+
+//  JLS 15.17-24 Infix Expression
+
+
+InfixExpression
+    = UnaryExpression
+          (InfixOperator UnaryExpression) * ;
+
+InfixOperator
+    = OROR
+    / ANDAND
+    / OR
+    / HAT
+    / AND
+    / EQUAL
+    / NOTEQUAL
+    / LT
+    / GT
+    / LE
+    / GE
+    / SL
+    / SR
+//    / BSR
+    / PLUS
+    / MINUS
+    / STAR
+    / DIV
+    / MOD
+    ;
+
+
+//  JLS 15.25  Conditional Operator ? :
+
+
+ConditionalExpression
+    = InfixExpression (QUERY Expression COLON Expression)* ;
+
+
+//  Assignment Operators
+//
+//  Each of ArrayAccess and FieldAccess in LeftHandSide
+//  can be a prefix of the other one.
+//  Until a solution is found, they are replaced by Primary.
+
+
+AssignmentExpression
+    = Assignment
+    / ConditionalExpression
+    ;
+
+Assignment
+    = LeftHandSide AssignmentOperator Expression ;
+
+LeftHandSide
+//    = ArrayAccess
+//    / FieldAccess
+    = Primary
+    / QualIdent
+    ;
+
+AssignmentOperator
+    = EQU
+    / STAREQU
+    / DIVEQU
+//    / MODEQU
+    / PLUSEQU
+    / MINUSEQU
+//    / SLEQU
+//    / SREQU
+//    / BSREQU
+    / ANDEQU
+//    / HATEQU
+    / OREQU
+    ;
+
+

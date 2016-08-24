@@ -1,0 +1,7 @@
+-cmd echo "Build Example App"
+-main App
+-resource script.hxs
+#-x build/neko/app
+#-cpp build/cpp
+#-java build/java
+-js build/js/app.js

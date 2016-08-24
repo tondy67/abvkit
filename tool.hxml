@@ -1,0 +1,5 @@
+-cmd echo "Build PEG Analyzer"
+-main abv.peg.AnalyzePEG
+-cp abv/peg
+-neko build/tool.n
+#-cpp build/cpp/tool

@@ -1,0 +1,8 @@
+-cmd echo "Build PEG Generator"
+-main abv.peg.Generate
+-cp abv/peg
+-resource ParserBase.hx@base
+-resource ParserTest.hx@test
+-resource BitMatrix.hx@matrix
+-neko build/gen.n
+#-cpp build/cpp/gen

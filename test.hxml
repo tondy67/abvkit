@@ -1,0 +1,8 @@
+-cmd echo "Build TestParser"
+-main abv.peg.TestParser
+-cp build
+#-cp abv/peg
+-neko build/test.n
+#-cpp build/cpp/test
+#-java build/java
+#-python build/test.py

@@ -1,0 +1,40 @@
+// http://lib.haxe.org/p/hscript
+var ttt = 10;
+/*
+ * 
+ * 
+ */
+  
+ function update()
+{
+	print("update: "+time());
+	return 10;
+}
+
+clear();
+print(ttt);
+print("Platform: "+uname());
+print(ls());
+rm("ttt","r");
+var d = "това е toto";
+var sw = 5;
+switch(sw){
+	case 5: update();//echo("switch: " + 5 +"\n");
+}
+ttt = 44;
+for (i in 0...5){
+	 print(123456);
+	 sw = i;
+ }
+
+switch(sw){
+	case 4: print(4);
+	default: print("ok");
+}
+
+if (sw == 5) print("5"); else print("no 5");
+print(exec("ls"));
+echo(d+"\n");
+sw = update();
+print(sw);
+print(TP.split("t g f d"," "));
