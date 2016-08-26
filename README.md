@@ -3,7 +3,7 @@ abvkit
 
 This is a [haxe](http://haxe.org) port of Roman R. Redziejowski [PEG parser generator](http://www.romanredz.se/Mouse/index.htm)
 
-**under development!**
+**Under development!**
 
 Installation
 ============
@@ -16,4 +16,29 @@ Install the latest version of [Haxe](http://www.haxe.org/download).
 	$ haxe test.hxml
 	$ cd build
 	$ neko test -t -f script.hxs
-	 
+	$ cd ../examples/hscript
+	$ haxe app.hxml
+	
+
+Information
+===========
+[Parsing_expression_grammar](https://en.wikipedia.org/wiki/Parsing_expression_grammar)
+
+[packrat](http://bford.info/packrat/)
+
+[Excellent manual](http://mousepeg.sourceforge.net/Manual.pdf)
+
+```
+//**********************
+// Comments by 
+//-----------------
+// Roman R. Redziejowski
+//**********************
+
+/*
+ * Comments by me (tondy)
+ */
+```	 
+License
+=======
+Apache License, Version 2.0

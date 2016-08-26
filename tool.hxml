@@ -2,4 +2,6 @@
 -main abv.peg.AnalyzePEG
 -cp abv/peg
 -neko build/tool.n
-#-cpp build/cpp/tool
+#-cpp build/
+#-java build/
+#-python build/tool.py

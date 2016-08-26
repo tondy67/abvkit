@@ -1,3 +1,23 @@
+/***********************************************************************
+*
+*  Part of abvkit (haxe port of http://www.romanredz.se/Mouse/)
+*
+*  Copyright (c) 2016 by Todor Angelov (www.tondy.com).
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+***********************************************************************/
+
 package abv.peg;
 
 //**********************************************************************
@@ -36,9 +56,9 @@ package abv.peg;
 // programmed there.
 // In addition, presence of certain letters in <string>
 // activates trcs in the parser:
-// r - trc execution of parsing procedures for rules.
-// i - trc execution of parsing procedures for inner expressions.
-// e - trc error information.
+// r - trace execution of parsing procedures for rules.
+// i - trace execution of parsing procedures for inner expressions.
+// e - trace error information.
 //
 // -d Show detailed statistics for backtracking - rescan - reuse. Optional.
 //
@@ -65,21 +85,22 @@ import ParserBase.Source;
 import ParserBase.Cache;
 import ParserTest.TCache;
 
-using abv.peg.AP;
+//using abv.peg.AP;
+using StringTools;
 
 @:dce
 class TestParser{
 	
 	var parser:AbvkitParser;
 //----------------------------------------------------------------------
-//Command arguments.
+// Command arguments.
 //----------------------------------------------------------------------
 	var cmd:CommandArgs;
 
 	var cacheList:Array<TCache> = [];
 
 //----------------------------------------------------------------------
-//Statistics switches.
+// Statistics switches.
 //----------------------------------------------------------------------
 	var details:Bool;// -d or -D specified
 	var allDetails:Bool; // -D specified
@@ -87,12 +108,12 @@ class TestParser{
 	var timing:Bool; // -t specified
 
 //----------------------------------------------------------------------
-//CSV file.
+// CSV file.
 //----------------------------------------------------------------------
 	var csvFile:String;
 
 //-------------------------------------------------------------
-//Computed totals.
+// Computed totals.
 //-------------------------------------------------------------
 	var calls:Int;
 	var succ:Int;
@@ -104,20 +125,21 @@ class TestParser{
 	var maxback:Int;
 
 //-------------------------------------------------------------
-//Execution time.
+// Execution time.
 //-------------------------------------------------------------
 	var time:Float;
 
 	var failed = 0;
 	var parsed:Bool;
-	
+	var _csv:String;
+		
 	public function new(){};
 
 	public function run()
 	{
-//=================================================================
+//----------------------------------------------------------------------
 // Get and check command arguments.
-//=================================================================
+//----------------------------------------------------------------------
 		cmd = new CommandArgs
 			 (Sys.args(),// arguments to parse
 			"Ddt", // options
@@ -126,7 +148,7 @@ class TestParser{
 		if (cmd.nErrors() > 0) return;
 
 //---------------------------------------------------------------
-//The -m option.
+// The -m option.
 //---------------------------------------------------------------
 		var m = 0;
 		if (cmd.opt('m')){
@@ -145,25 +167,22 @@ class TestParser{
 // The -T option.
 //---------------------------------------------------------------
 		var trc = cmd.optArg('T');
-		if (trc==null) trc = "";
+		if (trc == null) trc = "";
 
 //---------------------------------------------------------------
 // Set statistics switches.
 //---------------------------------------------------------------
-		if (cmd.opt('F') && cmd.opt('f'))
-		{
+		if (cmd.opt('F') && cmd.opt('f')){
 			Sys.println("-f and -F are mutually exclusive.");
 			return;
 		}
 
-		if (cmd.opt('C') && !cmd.opt('F'))
-		{
+		if (cmd.opt('C') && !cmd.opt('F')){
 			Sys.println("-C can only be specified together with -F.");
 			return;
 		}
 
-		if (cmd.opt('D') && cmd.opt('d'))
-		{
+		if (cmd.opt('D') && cmd.opt('d')){
 			Sys.println("-d and -D are mutually exclusive.");
 			return;
 		}
@@ -185,93 +204,96 @@ class TestParser{
 		if (parser.kind != "norm") s += " [" + Cache.size + "]";
 		Sys.println(s);
 
-//=================================================================
-//If no input files given, run parser interactively.
-//=================================================================
-		if (!cmd.opt('f') && !cmd.opt('F'))
-		{
+//----------------------------------------------------------------------
+// If no input files given, run parser interactively.
+//----------------------------------------------------------------------
+		if (!cmd.opt('f') && !cmd.opt('F')){
 			interact();
 			return;
 		}
 
-//=================================================================
-//If -f specified, process the file.
-//=================================================================
-		if (cmd.opt('f'))
-		{
+//----------------------------------------------------------------------
+// If -f specified, process the file.
+//----------------------------------------------------------------------
+		if (cmd.opt('f')){
 			test(cmd.optArg('f'));
 			return;
 		}
 
-//=================================================================
-//If -F specified, process files from the list.
-//=================================================================
+//----------------------------------------------------------------------
+// If -F specified, process files from the list.
+//----------------------------------------------------------------------
 		var listName = cmd.optArg("F");
 		if (listName == null) return;
 		
-		s = "";
-		try s = File.getContent(listName) catch(e:Dynamic){throw e;}
+		s = AP.open(listName);
 
-		if (s == "") return;
+		if (s == null){
+			AP.errNoFile(listName);
+			return;
+		}
 
-		var files = s.split("\n");
+		var files = new Array<String>();
+		var a = s.split("\n");
 
-		if (files.length == 0)throw "No files to test.";
-
-//---------------------------------------------------------------
-	//If -C specified, open the CSV file and write header.
-//---------------------------------------------------------------
-		if (csv)
-		{
-/*			csvFile = new PrintStream(cmd.optArg('C'));
-			if (timing)
-				csvFile.printf("%s%n","name,size,time,calls,ok,fail,back,resc,reuse,totbk,maxbk");
-			else
-				csvFile.printf("%s%n","name,size,calls,ok,fail,back,resc,reuse,totbk,maxbk");
-*/
+		for (it in a) if (it != "")files.push(it);
+		
+		if (files.length == 0){
+			Sys.println("No files to test.");
+			return;
 		}
 
 //---------------------------------------------------------------
-//Process the files.
+// If -C specified, open the CSV file and write header.
+//---------------------------------------------------------------
+		if (parser.kind != "test") csv = false;
+		
+		if (csv){
+			_csv = "name,size,";
+			csvFile = cmd.optArg('C');
+			if (timing)	_csv += "time,";
+			_csv += "calls,ok,fail,back,resc,reuse,totbk,maxbk\n";
+
+		}
+
+//---------------------------------------------------------------
+// Process the files.
 //---------------------------------------------------------------
 		failed = 0;
 		var t0 = AP.now();
 
 		for (name in files)	if (!test(name)) failed++;
 
-		var t1 = AP.now();
+		time = AP.now() - t0;
 
 //---------------------------------------------------------------
-//Write number of processed / failed files.
+// Write number of processed / failed files.
 //---------------------------------------------------------------
 		Sys.println("\nTried " + files.length + " files.");
-		if (failed==0) Sys.println("All successfully parsed.");
+		if (failed == 0) Sys.println("All successfully parsed.");
 		else Sys.println(failed + " failed.");
 
 //---------------------------------------------------------------
-	//Write total time if requested.
+// Write total time if requested.
 //---------------------------------------------------------------
-		if (timing) Sys.println("Total time " + (t1-t0) + " s.");
+		if (timing) Sys.println("Total time " + time + " s.");
 
 //---------------------------------------------------------------
-//Close the CSV file.
+// Close the CSV file.
 //---------------------------------------------------------------
-//		if (csv) csvFile.close();
+		if (csv) AP.save(csvFile, _csv);
 	}
 
 
-//=====================================================================
-//
-//Run parser on file 'name'
-//
-//=====================================================================
+//----------------------------------------------------------------------
+// Run parser on file 'name'
+//----------------------------------------------------------------------
 
 	function test(name:String)
 	{
-		var s = "";
-		try s = File.getContent(name) 
-		catch(e:Dynamic){
-			trace(e);
+		var s = AP.open(name); 
+		if (s == null){
+			AP.errNoFile(name);
 			return false;
 		}
 		var src = new Source(s);
@@ -292,8 +314,7 @@ class TestParser{
 			if (parser.kind == "test"){
 				compTotals();
 
-				if (csv) csvTotals(name,size);
-				else writeTotals();
+				if (csv) csvTotals(name,size); else writeTotals();
 
 				if (details){
 					if (csv) csvDetails(allDetails);
@@ -306,14 +327,12 @@ class TestParser{
 		}
 
 		return true;
-	 }
+	 }// test()
 
 
-//=====================================================================
-//
-//Run test interactively
-//
-//=====================================================================
+//----------------------------------------------------------------------
+// Run test interactively
+//----------------------------------------------------------------------
 
 	function interact()
 	{
@@ -340,7 +359,6 @@ class TestParser{
 					compTotals();
 					Sys.println("");
 					writeTotals();
-//					if (details) writeDetails(src,allDetails);
 				}
 			}else{
 				Sys.println(s + "failed.");
@@ -352,11 +370,9 @@ class TestParser{
 	}
 
 
-//=====================================================================
-//
-//Compute totals
-//
-//=====================================================================
+//----------------------------------------------------------------------
+// Compute totals
+//----------------------------------------------------------------------
 
 	function compTotals()
 	{
@@ -382,16 +398,13 @@ class TestParser{
 	}
 
 
-//=====================================================================
-//
-//Write totals to System.out
-//
-//=====================================================================
+//----------------------------------------------------------------------
+// Write totals to System.out
+//----------------------------------------------------------------------
 
 	function writeTotals()
 	{
-		if (timing)	Sys.println('$calls calls: $succ ok, $fail failed, $back backtracked.');
-		else Sys.println('$calls calls: $succ ok, $fail failed, $back backtracked.');
+		Sys.println('$calls calls: $succ ok, $fail failed, $back backtracked.');
 		Sys.print('$rescan rescanned');
 		
 		if (reuse == 0) Sys.println(".\n");
@@ -402,29 +415,22 @@ class TestParser{
 	}
 
 
-//=====================================================================
-//
-//Write totals to CSV file
-//
-//=====================================================================
+//----------------------------------------------------------------------
+// Write totals to CSV file
+//----------------------------------------------------------------------
 
 	function csvTotals(name:String, size:Int)
 	{
-/*		if (timing)
-		csvFile.printf("\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d%n",
-		name,size,time,calls,succ,fail,back,rescan,reuse,totback,maxback);
-		else
-		csvFile.printf("\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d%n",
-		name,size,calls,succ,fail,back,rescan,reuse,totback,maxback);
-*/
+		_csv += '"$name",$size,';
+		if (timing) _csv += '${AP.lpad(time+"",6)},';
+		_csv += '$calls,$succ,$fail,$back,$rescan,$reuse,$totback,$maxback\n';
+
 	}
 
 
-//=====================================================================
-//
-//Write details to System.out
-//
-//=====================================================================
+//----------------------------------------------------------------------
+// Write details to System.out
+//----------------------------------------------------------------------
 
 	function writeDetails( src:Source,  all:Bool)
 	{
@@ -448,27 +454,18 @@ class TestParser{
 	}
 
 
-//=====================================================================
-//
-//Write details to CSV file
-//
-//=====================================================================
-
-	function csvDetails( all:Bool)
+//----------------------------------------------------------------------
+// Write details to CSV file
+//----------------------------------------------------------------------
+	function csvDetails(all:Bool)
 	{
-/*		for (Cache s: cacheList)
-		{
-		if (all || s.back != 0 || s.reuse != 0 || s.rescan != 0)
-		{
-		String desc = Convert.toPrint(s.name).replace("\"","\"\"");
-		if (timing)
-		csvFile.printf("\"%s\",\"\",\"\",%d,%d,%d,%d,%d,%d,%d,%d%n",
-		desc,s.calls,s.succ,s.fail,s.back,s.rescan,s.reuse,s.totback,s.maxback);
-		else
-		csvFile.printf("\"%s\",\"\",%d,%d,%d,%d,%d,%d,%d,%d%n",
-		desc,s.calls,s.succ,s.fail,s.back,s.rescan,s.reuse,s.totback,s.maxback);
-		}
-		} */
+		for (s in cacheList){
+			if (all || (s.back != 0) || (s.reuse != 0) || (s.rescan != 0)){
+				_csv += '"' + Convert.toPrint(s.name).replace('"','""') + '",';
+				if (timing) _csv += '"",';
+				_csv += '${s.calls},${s.succ},${s.fail},${s.back},${s.rescan},${s.reuse},${s.totback},${s.maxback}\n';
+			}
+		} 
 	}
 
 	public static function main()

@@ -1,3 +1,23 @@
+/***********************************************************************
+*
+*  Part of abvkit (haxe port of http://www.romanredz.se/Mouse/)
+*
+*  Copyright (c) 2016 by Todor Angelov (www.tondy.com).
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+***********************************************************************/
+
 package abv.peg;
 
 import abv.peg.ParserBase.Source;
@@ -6,7 +26,7 @@ import abv.peg.ParserBase.Source;
 //
 // Generate
 //
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------
 //
 // Generate parser from Parsing Expression Grammar.
 // Optionally, generate skeleton for the corresponding semantics class.
@@ -24,7 +44,7 @@ import abv.peg.ParserBase.Source;
 // The <directory> need not be a complete path, just enough to identify
 // the directory in current environment. The directory must exist.
 //
-//-P <parser>
+// -P <parser>
 // Specifies name of the parser to be generated. Mandatory.
 // Must be an unqualified class name.
 // The tool generates a file named "<parser>.hx" in target directory.
@@ -32,26 +52,20 @@ import abv.peg.ParserBase.Source;
 // If target directory already contains a file "<parser>.hx",
 // the file is replaced without a warning,
 //
-//-p <package>
-// Generate parser as member of package <package>.
-// The semantics class, if specified, is assumed to belong to the same package.
-// Optional. If not specified, both classes belong to unnamed package.
-// The specified package need not correspond to the target directory.
-//
-//-s Generate skeleton of semantics class. Optional.
+// -s Generate skeleton of semantics class. Optional.
 // If target directory already contains a file "<semantics>.hx",
 // the tool is not executed.
 //
-//-M Generate memoizing version of the parser.
+// -M Generate memoizing version of the parser.
 //
-//-T Generate instrumented ('test') version of the parser.
+// -T Generate instrumented ('test') version of the parser.
 //
 // (Options -M and -T are mutually exclusive.)
 //
 //
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // TestPEG
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // Check the grammar without generating parser. (without -P option)
 //
 // -A Display the grammar. Optional.
@@ -66,10 +80,11 @@ import abv.peg.ParserBase.Source;
 //**********************************************************************
 using StringTools;
 
+@:dce
 class Generate {
-//---------------------------------------------------------------------------
-//Input
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Input
+//----------------------------------------------------------------------
 	var gramName:String; // Grammar file name
 	var gramPath:String; // Full path to grammar file
 	var parsName:String; // Parser name
@@ -81,42 +96,42 @@ class Generate {
 	var test:Bool;// Generate test version?
 	var skel:Bool;// Generate semantics skeleton?
 
-//---------------------------------------------------------------------------
-//Output.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Output.
+//----------------------------------------------------------------------
 	public var out:LineWriter;
 
-//---------------------------------------------------------------------------
-//Parsed grammar.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Parsed grammar.
+//----------------------------------------------------------------------
 	var peg:PEG = null;
 
-//---------------------------------------------------------------------------
-//Date stamp.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Date stamp.
+//----------------------------------------------------------------------
 	var date:String;
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // Cache name (or nothing) to be generated.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public var cache = "";
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // Visitors.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public var procVisitor:ProcVisitor;
 	public var refVisitor:RefVisitor;
 	public var inliVisitor:InliVisitor;
 	public var termVisitor:TermVisitor;
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // The subexpressions that will have procedures.
 // They have names consisting of the name of the containing Rule,
 // followed by underscore and number within the Rule.
 // Their procedures are created immediately after that for the Rule
 // by procedure 'createSubs'; 'done' counts the elements of 'subs'
 // that already have procedures created.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public var subs = new Array<Expr>();
 	public var exprName:String; // Name of containing Rule
 	public var procName:String; // Name of procedure being generated
@@ -141,26 +156,25 @@ class Generate {
 	}
 
 
-	function getPEG(name:String)
-	{
-		var s = AP.open(name);
-		if (s == null) return null;
-		var src = new Source(s); 
-		return new PEG(src); 
-	}// getPEG()
-	
 //----------------------------------------------------------------------
 // Do the job
 //----------------------------------------------------------------------
 	function run()
 	{
+		var args = Sys.args();
+		
+		if (args.length == 0){
+			showUsage();
+			return;
+		}
+
 		var errors = false;
 //----------------------------------------------------------------------
 // Parse arguments.
 //----------------------------------------------------------------------
-		cmd = new CommandArgs(Sys.args(), // arguments to parse
+		cmd = new CommandArgs(args, // arguments to parse
 								"MTCARs",// options without argument
-								"GPDp", // options with argument
+								"GPD", // options with argument
 								 0,0);// no positional arguments
 		if (cmd.nErrors() > 0) return;
 
@@ -177,6 +191,7 @@ class Generate {
 
 		if (gramName == null){
 			Sys.println("Specify -G grammar name.");
+			return;
 			errors = true;
 		}
 /*
@@ -201,8 +216,9 @@ class Generate {
 
 		semName = parsName + "Semantics";
 
-		if (dirName == null) dirName = "";
-		else dirName = AP.addSlash(dirName);
+		//if (dirName == null) 
+		dirName = "parser/";
+//		else dirName = AP.addSlash(dirName);
 
 		semFile = dirName + semName + ".hx";
 		if (skel) {
@@ -639,9 +655,9 @@ class Generate {
 		expr.accept(inliVisitor);
 	}
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // This procedure returns kernel of a call to terminal processing.
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public function termCall( expr:Expr)
 	{
 		termVisitor.cash = test? "_" + expr.name + "_": "";
@@ -656,9 +672,9 @@ class Generate {
 //**********************************************************************
 //
 // Auxiliary methods
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // Create parsing procedures for subexpressions.
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 	function createSubs()
 	{
 		var toDo = subs.length;
@@ -691,9 +707,9 @@ class Generate {
 		}
 	}// createSubs()
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // isPred
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	function isPred( expr:Expr)
 	{
 		return
@@ -701,9 +717,9 @@ class Generate {
 		Std.is(expr,Expr.Not) ;
 	}
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // isTerm
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public function isTerm( expr:Expr)
 	{
 		return
@@ -713,18 +729,18 @@ class Generate {
 		Std.is(expr , Expr.Any) ;
 	}
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 // Get diagnostic name of a Rule
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public function diagName(rule:Expr.Rule)
 	{
 		if (rule.diagName == null) return rule.name;
 		else return Convert.toStringLit(rule.diagName);
 	}
 
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 //Get diagnostic string for a Predicate
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------
 	public function diagPred( expr:Expr)
 	{
 		if (Std.is(expr , Expr.And)){
@@ -748,8 +764,38 @@ class Generate {
 		}else{
 			throw "SNOC";
 		}
-}
+	}
 
+/*
+ * 
+ */ 
+	function getPEG(name:String)
+	{
+		var s = AP.open(name);
+		if (s == null) return null;
+		var src = new Source(s); 
+		return new PEG(src); 
+	}// getPEG()
+
+	function showUsage()
+	{
+		var s = "abvkit 0.0.1\n";
+		s += "Usage: <gen> [options]\n";
+		s += " Options:\n";
+		s += "  -G <grammar>: Identifies the file containing the grammar.\n";
+		s += "   -A: Display the grammar.\n";
+		s += "   -C: Display the grammar in compact form.\n";
+		s += "   -R: Display only the rules.\n";
+		s += "  -P <parser>: Specifies name of the parser to be generated.\n";
+		s += "   -M: Generate memoizing version of the parser.\n";
+		s += "   -T: Generate instrumented ('test') version of the parser.\n";
+		s += "  -D <directory>: Identifies target directory to receive the generated file(s).\n";
+		s += "  -s: Generate skeleton of semantics class.\n";
+		s += "Examples:\n";
+		s += " <gen> -G hscript.peg -R\n";
+		s += " <gen> -G hscript.peg -P Hscript -M\n";
+		Sys.println(s);
+	}
 
 }// Generate
 

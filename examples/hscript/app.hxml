@@ -1,7 +1,13 @@
 -cmd echo "Build Example App"
 -main App
 -resource script.hxs
-#-x build/neko/app
+###
+-x build/neko/app
 #-cpp build/cpp
 #-java build/java
--js build/js/app.js
+#-js build/js/app.js
+#-python build/python/app.py
+###
+#-swf build/flash/app.swf 
+#-swf-version 11.2 
+#-swf-header 768:480:32:FFFFFF  

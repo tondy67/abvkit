@@ -1,3 +1,23 @@
+/***********************************************************************
+*
+*  Part of abvkit (haxe port of http://www.romanredz.se/Mouse/)
+*
+*  Copyright (c) 2016 by Todor Angelov (www.tondy.com).
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+***********************************************************************/
+
 package abv.peg;
 
 //**********************************************************************
@@ -7,6 +27,7 @@ package abv.peg;
 //**********************************************************************
 using StringTools;
 
+@:dce
 class ParserBase implements CurrentRule{
 //----------------------------------------------------------------------
 // Input
@@ -26,12 +47,12 @@ class ParserBase implements CurrentRule{
 	var current:Phrase = null;
 
 //-------------------------------------------------------------------
-//Phrase to reuse.
+// Phrase to reuse.
 //-------------------------------------------------------------------
 	var _reuse:Phrase;
 
 //-------------------------------------------------------------------
-//List of Cache objects for initialization.
+// List of Cache objects for initialization.
 //-------------------------------------------------------------------
 	public var caches = new Array<Cache>();
 
@@ -47,7 +68,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //----------------------------------------------------------------------
-//Implementation of Parser interface CurrentRule
+// Implementation of Parser interface CurrentRule
 //----------------------------------------------------------------------
 	public function lhs()
 	{ 
@@ -87,12 +108,9 @@ class ParserBase implements CurrentRule{
 		}
 	}
 
-// == == == == == == == == ==
-//
+//-----------------------------------------------------------------
 // Methods called from parsing procedures
 //
-// == == == == == == == == ==
-//----------------------------------------------------------------------
 // Initialize processing of a nonterminal:
 // create new Phrase and push it on compile stack.
 //----------------------------------------------------------------------
@@ -111,10 +129,10 @@ class ParserBase implements CurrentRule{
 	function accept(c:Cache=null)
 	{
 		var p:Phrase = pop();// Pop the finishing Phrase
- // Finalize p:
+// Finalize p:
 		p.success = true;// Indicate p successful
 		p.rhs = null;// Discard rhs of p
- // Update parent Phrase:
+// Update parent Phrase:
 		current.end = pos; // End of text
 		current.rhs.push(p);// Add p to the rhs
 		current.hwmUpdFrom(p); // Update failure history
@@ -156,7 +174,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //----------------------------------------------------------------------
-//Reject Rule
+// Reject Rule
 //----------------------------------------------------------------------
 	function reject(c:Cache=null)
 	{
@@ -175,7 +193,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //----------------------------------------------------------------------
-//Reject Inner
+// Reject Inner
 //----------------------------------------------------------------------
 	function rejectInner(c:Cache=null)
 	{
@@ -192,7 +210,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //----------------------------------------------------------------------
-//Reject predicate
+// Reject predicate
 //----------------------------------------------------------------------
 	function rejectPred(c:Cache=null)
 	{
@@ -213,15 +231,15 @@ class ParserBase implements CurrentRule{
 	function next(s="",c:Cache=null)
 	{
 		if(s == ""){
-//Execute expression _
+// Execute expression _
 			if (pos < endpos) return consume(1);
 			else return fail("any character");
 		}else if(s.length == 1){
-//Execute expression 'c'
+// Execute expression 'c'
 			if ((pos < endpos) && (source.at(pos) == s)) return consume(1);
 			else return fail("'" + s + "'");
 		}else{
-//Execute expression "s"
+// Execute expression "s"
 			var lg = s.length;
 			if ((pos+lg <= endpos) && (source.at(pos,pos+lg) == s)) return consume(lg);
 			else return fail("'" + s + "'");
@@ -371,14 +389,11 @@ class ParserBase implements CurrentRule{
 		return false;
 	}
 
-//=====================================================================
+//----------------------------------------------------------------------
+// Methods called from parsing procedures
 //
-//Methods called from parsing procedures
-//
-//=====================================================================
-//-------------------------------------------------------------------
-//If saved result found, use it, otherwise begin new procedure.
-//Version for Rule.
+// If saved result found, use it, otherwise begin new procedure.
+// Version for Rule.
 //-------------------------------------------------------------------
 	function saved(c:Cache)
 	{
@@ -392,8 +407,8 @@ class ParserBase implements CurrentRule{
 	}
 
 //-------------------------------------------------------------------
-//If saved result found, use it, otherwise begin new procedure.
-//Version for Inner.
+// If saved result found, use it, otherwise begin new procedure.
+// Version for Inner.
 //-------------------------------------------------------------------
 	function savedInner(c:Cache)
 	{
@@ -407,7 +422,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //-------------------------------------------------------------------
-//Reuse Rule
+// Reuse Rule
 //-------------------------------------------------------------------
 	function reuse()
 	{
@@ -420,7 +435,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //-------------------------------------------------------------------
-//Reuse Inner
+// Reuse Inner
 //-------------------------------------------------------------------
 	function reuseInner()
 	{
@@ -434,7 +449,7 @@ class ParserBase implements CurrentRule{
 	}
 
 //-------------------------------------------------------------------
-//Reuse predicate
+// Reuse predicate
 //-------------------------------------------------------------------
 	function reusePred()
 	{
@@ -458,44 +473,42 @@ class ParserBase implements CurrentRule{
 
 //**********************************************************************
 //
-//Current Rule seen by a semantic action
+// Current Rule seen by a semantic action
 //
 //**********************************************************************
 
 interface CurrentRule{
 //----------------------------------------------------------------------
-//Left-hand side.
+// Left-hand side.
 //----------------------------------------------------------------------
 	public function lhs():Phrase;
 
 //----------------------------------------------------------------------
-//Number of right-hand side items.
+// Number of right-hand side items.
 //----------------------------------------------------------------------
 	public function rhsSize():Int;
 
 //----------------------------------------------------------------------
-//i-th item on the right-hand side.
+// i-th item on the right-hand side.
 //----------------------------------------------------------------------
 	public function rhs(i:Int):Phrase;
 
 //----------------------------------------------------------------------
-//String represented by right-hand side items i through j-1.
+// String represented by right-hand side items i through j-1.
 //----------------------------------------------------------------------
 	public function rhsText(i:Int,j:Int):String;
 }// CurrentRule
 
 //**********************************************************************
 //
-//SemanticsBase
+// SemanticsBase
 //
 //**********************************************************************
 
 class SemanticsBase{
-//**********************************************************************
-//
+//----------------------------------------------------------------------
 // Fields set by the Parser.
 //
-//**********************************************************************
 // Reference to current rule in the Parser.
 // Set when Parser instantiates Semantics.
 //----------------------------------------------------------------------
@@ -515,14 +528,11 @@ class SemanticsBase{
 	public function init() {}
 
 
-// == == == == == == == == ==
-//
+//----------------------------------------------------------------------
 // Methods to be invoked from semantic actions.
 // They call back the parser to obtain details of the environment
 // in which the action was invoked.
 //
-// == == == == == == == == ==
-//----------------------------------------------------------------------
 // Returns the left-hand side Phrase object.
 //----------------------------------------------------------------------
 	function lhs()
@@ -557,14 +567,39 @@ class SemanticsBase{
 	{ 
 		return rule.rhsText(i,j); 
 	}
+/*
+ * 
+ */
+	function arrayValue<T>(i:Int)
+	{ 
+		var r:Array<T> = null;
+		try{
+			r = new Array<T>();
+			var a = cast(rhs(i).get(),Array<Dynamic>); 
+			for (i in 0...a.length){
+				if (a[i] != null)r[i] = cast a[i];
+			}
+		}catch(e:Dynamic){}; 
+		return r;
+	} 
+	 
+	function stringValue(i:Int)
+	{ 
+		return Std.string(rhs(i).get()); 
+	}
+
+	function charValue(i:Int)
+	{ 
+		return stringValue(i).charAt(0); 
+	}
 
 }// SemanticsBase
 
-//HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+//**********************************************************************
 //
 // Cache
 //
-//HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+//**********************************************************************
 
 class Cache{
 //----------------------------------------------------------------------
@@ -615,9 +650,8 @@ class Source {
 		text = s; 
 	}
 
-
 //----------------------------------------------------------------------
-//Returns end position.
+// Returns end position.
 //----------------------------------------------------------------------
 	public function end()
 	{ 
@@ -625,7 +659,7 @@ class Source {
 	}
 
 //----------------------------------------------------------------------
-//Returns character at position p.
+// Returns character at position p.
 //----------------------------------------------------------------------
 	public function at(p:Int, q=0)
 	{ 
@@ -634,7 +668,7 @@ class Source {
 	}
 
 //----------------------------------------------------------------------
-//Describes position p in terms of preceding text.
+// Describes position p in terms of preceding text.
 //----------------------------------------------------------------------
 	public function whereIs(p:Int)
 	{
@@ -696,7 +730,7 @@ class Phrase{
 	public var hwmExp = new Array<String>();
 
 //-----------------------------------------------------------------
-//Deferred actions
+// Deferred actions
 //-----------------------------------------------------------------
 	public var defAct = new Array<Deferred>();
 
@@ -709,12 +743,9 @@ class Phrase{
 		this.source = source;
 	}
 
-// == == == == == == == == == == == == == == == == == == == == == == ==
-//
+//-----------------------------------------------------------------
 // Methods called from semantic procedures
 //
-// == == == == == == == == == == == == == == == == == == == == == == ==
-//-----------------------------------------------------------------
 // Set value
 //-----------------------------------------------------------------
 	public function put(o:Dynamic)
@@ -838,12 +869,9 @@ class Phrase{
 	}
 
 
-// == == == == == == == == == == == == == == == == == == == == == == ==
-//
+//-----------------------------------------------------------------
 // Metods called from Parser
 //
-// == == == == == == == == == == == == == == == == == == == == == == ==
-//-----------------------------------------------------------------
 // Clear high-water mark
 //-----------------------------------------------------------------
 	public function hwmClear()
@@ -915,7 +943,7 @@ class Phrase{
 	}
 
 //-----------------------------------------------------------------
-//Convert string to printable and append to StringBuf.
+// Convert string to printable and append to StringBuf.
 //-----------------------------------------------------------------
 	function toPrint( s:String,sb:StringBuf)
 	{

@@ -9,6 +9,7 @@ package abv.peg;
 
 import abv.peg.ParserBase.Source;
 
+@:dce
 class Parser extends ParserBase{
 
   public var sem(default,null):Semantics;

@@ -1,10 +1,31 @@
+/***********************************************************************
+*
+*  Part of abvkit (haxe port of http://www.romanredz.se/Mouse/)
+*
+*  Copyright (c) 2016 by Todor Angelov (www.tondy.com).
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+***********************************************************************/
+
 package abv.peg;
 
 import abv.peg.ParserBase.SemanticsBase;
 
+@:dce
 class Semantics extends SemanticsBase{
 //----------------------------------------------------------------------
-//Results: array of Rules and number of errors.
+// Results: array of Rules and number of errors.
 //----------------------------------------------------------------------
 public var rules:Array<Expr.Rule> = null;
 public var errcount = 0;
@@ -34,37 +55,11 @@ public var errcount = 0;
 		return r; 
 	}
 
-	function arrayValue<T>(i:Int)
-	{ 
-		var r:Array<T> = null;
-		try{
-			r = new Array<T>();
-			var a = cast(rhs(i).get(),Array<Dynamic>); 
-			for (i in 0...a.length){
-				if (a[i] != null)r[i] = cast a[i];
-			}
-		}catch(e:Dynamic){}; 
-		return r;
-	} 
-	 
-	function stringValue(i:Int)
-	{ 
-		return Std.string(rhs(i).get()); 
-	}
-
-	function charValue(i:Int)
-	{ 
-		return stringValue(i).charAt(0); 
-	}
-
-// == == == == == == == == == == == == == == == == == == == == == == === == =
-//
-//Semantic procedures
-//
-// == == == == == == == == == == == == == == == == == == == == == == === == =
 //----------------------------------------------------------------------
-//Grammar = Space? (&_ (Rule / Skip))* EOT
-//0 1,2,..,-2-1
+// Semantic procedures
+//----------------------------------------------------------------------
+// Grammar = Space? (&_ (Rule / Skip))* EOT
+// 0 1,2,..,-2-1
 //----------------------------------------------------------------------
 	public function Grammar()
 	{
@@ -88,7 +83,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Rule = Name EQUAL RuleRhs DiagName? SEMI
+// Rule = Name EQUAL RuleRhs DiagName? SEMI
 // 0123 4(3)
 //----------------------------------------------------------------------
 	public function Rule()
@@ -121,7 +116,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Rule not recognized
+// Rule not recognized
 //----------------------------------------------------------------------
 	public function Error()
 	{
@@ -131,8 +126,8 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//RuleRhs = Sequence Actions (SLASH Sequence Actions)*
-//0 1 2,5,.. 3,6,.. 4,7,..
+// RuleRhs = Sequence Actions (SLASH Sequence Actions)*
+// 0 1 2,5,.. 3,6,.. 4,7,..
 //----------------------------------------------------------------------
 	public function RuleRhs()
 	{
@@ -155,7 +150,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Choice = Sequence (SLASH Sequence)*
+// Choice = Sequence (SLASH Sequence)*
 // 0 1,3,..2,4,..
 //----------------------------------------------------------------------
 	public function Choice()
@@ -173,7 +168,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Sequence = Prefixed+
+// Sequence = Prefixed+
 // 0,1,..
 //----------------------------------------------------------------------
 	public function Sequence()
@@ -192,8 +187,8 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Prefixed = PREFIX? Suffixed
-//0 1(0)
+// Prefixed = PREFIX? Suffixed
+// 0 1(0)
 //----------------------------------------------------------------------
 	public function Prefixed()
 	{
@@ -219,7 +214,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Suffixed= Primary (UNTIL Primary / SUFFIX)?
+// Suffixed= Primary (UNTIL Primary / SUFFIX)?
 // 0 12 1
 //----------------------------------------------------------------------
 	public function Suffixed()
@@ -241,7 +236,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Primary = Name
+// Primary = Name
 // 0
 //----------------------------------------------------------------------
 	public function Resolve()
@@ -251,29 +246,35 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Primary = LPAREN Choice RPAREN
+// Primary = LPAREN Choice RPAREN
 // 012
 //----------------------------------------------------------------------
 	public function Pass2()
-	{ lhs().put(rhs(1).get()); }
+	{ 
+		lhs().put(rhs(1).get()); 
+	}
 
 //----------------------------------------------------------------------
 //Primary = ANY
 //----------------------------------------------------------------------
 	public function Any()
-	{ lhs().put(new Expr.Any()); }
+	{ 
+		lhs().put(new Expr.Any()); 
+	}
 
 //----------------------------------------------------------------------
-//Primary = StringLit
-//Primary = Range
-//Primary = CharClass
-//Char = Escape
+// Primary = StringLit
+// Primary = Range
+// Primary = CharClass
+// Char = Escape
 //----------------------------------------------------------------------
 	public function Pass()
-	{ lhs().put(rhs(0).get()); }
+	{ 
+		lhs().put(rhs(0).get()); 
+	}
 
 //----------------------------------------------------------------------
-//Actions = OnSucc OnFail
+// Actions = OnSucc OnFail
 // 0 1
 //----------------------------------------------------------------------
 	public function Actions()
@@ -282,8 +283,8 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//OnSucc = (LWING AND? Name? RWING)?
-//01-2-1
+// OnSucc = (LWING AND? Name? RWING)?
+// 01-2-1
 //----------------------------------------------------------------------
 	public function OnSucc()
 	{
@@ -300,8 +301,8 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//OnFail = (TILDA LWING Name? RWING)?
-//0 1-2-1
+// OnFail = (TILDA LWING Name? RWING)?
+// 0 1-2-1
 //----------------------------------------------------------------------
 	public function OnFail()
 	{
@@ -316,15 +317,17 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Name = Letter (Letter / Digit)* Space
-//01 ... -2 -1
+// Name = Letter (Letter / Digit)* Space
+// 01 ... -2 -1
 //----------------------------------------------------------------------
 	public function Name()
-	{ lhs().put(rhsText(0,rhsSize()-1)); }
+	{ 
+		lhs().put(rhsText(0,rhsSize()-1)); 
+	}
 
 //----------------------------------------------------------------------
-//DiagName = "(" (!")" Char)+ ")" Space
-//01,2..,-3-2 -1
+// DiagName = "(" (!")" Char)+ ")" Space
+// 01,2..,-3-2 -1
 //----------------------------------------------------------------------
 	public function DiagName()
 	{
@@ -335,7 +338,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//StringLit = ["] (!["] Char)+ ["] Space
+// StringLit = ["] (!["] Char)+ ["] Space
 // 01,2..,-3-2 -1
 //----------------------------------------------------------------------
 	public function StringLit()
@@ -347,8 +350,8 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//CharClass = ("[" / "^[") (!"]" Char)+ "]" Space
-//001,2..,-3-2 -1
+// CharClass = ("[" / "^[") (!"]" Char)+ "]" Space
+// 001,2..,-3-2 -1
 //----------------------------------------------------------------------
 	public function CharClass()
 	{
@@ -358,7 +361,7 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Range = "[" Char "-" Char "]" Space
+// Range = "[" Char "-" Char "]" Space
 // 01 23 45
 //----------------------------------------------------------------------
 	public function Range()
@@ -369,14 +372,16 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Char = ![\r\n]_
+// Char = ![\r\n]_
 //----------------------------------------------------------------------
 	public function Char()
-	{ lhs().put(rhs(0).charAt(0)); }
+	{ 
+		lhs().put(rhs(0).charAt(0)); 
+	}
 
 //----------------------------------------------------------------------
-//Escape = "\\u" HexDigit HexDigit HexDigit HexDigit
-//0 1 234
+// Escape = "\\u" HexDigit HexDigit HexDigit HexDigit
+// 0 1 234
 //----------------------------------------------------------------------
 	public function Unicode()
 	{
@@ -385,37 +390,47 @@ public var errcount = 0;
 	}
 
 //----------------------------------------------------------------------
-//Escape = "\n"
+// Escape = "\n"
 // 0
 //----------------------------------------------------------------------
 	public function Newline()
-	{ lhs().put('\n'); }
+	{ 
+		lhs().put('\n'); 
+	}
 
 //----------------------------------------------------------------------
-//Escape = "\r"
+// Escape = "\r"
 // 0
 //----------------------------------------------------------------------
 	public function CarRet()
-	{ lhs().put('\r'); }
+	{ 
+		lhs().put('\r'); 
+	}
 
 //----------------------------------------------------------------------
-//Escape = "\t"
+// Escape = "\t"
 // 0
 //----------------------------------------------------------------------
 	public function Tab()
-	{ lhs().put('\t'); }
+	{ 
+		lhs().put('\t'); 
+	}
 
 //----------------------------------------------------------------------
-//Escape = "\" _
-//01
+// Escape = "\" _
+// 01
 //----------------------------------------------------------------------
 	public function Escape()
-	{ lhs().put(rhs(1).charAt(0)); }
+	{ 
+		lhs().put(rhs(1).charAt(0)); 
+	}
 
 //----------------------------------------------------------------------
-//Space = ([ \r\n\t] / Comment)*
+// Space = ([ \r\n\t] / Comment)*
 //----------------------------------------------------------------------
 	public function Space()
-	{lhs().errClear(); }
+	{
+		lhs().errClear(); 
+	}
 
 }

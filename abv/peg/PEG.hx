@@ -1,38 +1,59 @@
+/***********************************************************************
+*
+*  Part of abvkit (haxe port of http://www.romanredz.se/Mouse/)
+*
+*  Copyright (c) 2016 by Todor Angelov (www.tondy.com).
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*
+***********************************************************************/
+
 package abv.peg;
 
 //**********************************************************************
 //
-//Class PEG
+// Class PEG
 //
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------
 //
-//A PEG object represents parsed grammar.
-//The parsed grammar is a structure of Expr objects in the form of
-//trees rooted in Expr.Rule objects. The Expr.Rule objects are listed
-//in the array 'rules'. For easier handling, additional arrays contain
-//lists of other objects appearing in the structure: 'subs' for
-//subexpressions, 'terms' for terminals, and 'refs' for Expr.Ref objects.
+// A PEG object represents parsed grammar.
+// The parsed grammar is a structure of Expr objects in the form of
+// trees rooted in Expr.Rule objects. The Expr.Rule objects are listed
+// in the array 'rules'. For easier handling, additional arrays contain
+// lists of other objects appearing in the structure: 'subs' for
+// subexpressions, 'terms' for terminals, and 'refs' for Expr.Ref objects.
 //
-//The constructor builds this structure from a file containing PEG,
-//computes Ford's attributes, and checks various aspects of the grammar.
+// The constructor builds this structure from a file containing PEG,
+// computes Ford's attributes, and checks various aspects of the grammar.
 //
-//Method 'compact' eliminates duplicate subexpressions from the
-//parsed grammar. After this operation, the parsed grammar is no longer
-//a set of trees, but an acyclic graph, as different Expr nodes may
-//point to the same subexpressions. The 'rules' array is not changed
-//(duplicate rules are not eliminated), but the other arrays are updated.
+// Method 'compact' eliminates duplicate subexpressions from the
+// parsed grammar. After this operation, the parsed grammar is no longer
+// a set of trees, but an acyclic graph, as different Expr nodes may
+// point to the same subexpressions. The 'rules' array is not changed
+// (duplicate rules are not eliminated), but the other arrays are updated.
 //
-//The 'show' methods print out on System.out the grammar reconstructed
-//from its parsed form, together with the computed attributes.
+// The 'show' methods print out on System.out the grammar reconstructed
+// from its parsed form, together with the computed attributes.
 //
 //**********************************************************************
 import abv.peg.ParserBase.Source;
 
 using abv.peg.AP;
 
+@:dce
 class PEG{
 //----------------------------------------------------------------------
-//Rules, subexpressions, terminals, references.
+// Rules, subexpressions, terminals, references.
 //----------------------------------------------------------------------
 	public var rules:Array<Expr.Rule>;
 	public var subs:Array<Expr>;
@@ -40,7 +61,7 @@ class PEG{
 	public var refs:Array<Expr.Ref>;
 
 //----------------------------------------------------------------------
-//Counters.
+// Counters.
 //----------------------------------------------------------------------
 	public var errors:Int; // Errors
 	public var iterAt:Int; // Iterations for attributes
@@ -48,17 +69,11 @@ class PEG{
 	public var notWF:Int;// Not well-formed expressions
 
 
-// == == == == == == == == ==
-//
-//Constructor
-//
-// == == == == == == == == ==
-
 	public function new(src:Source)
 	{
-	//---------------------------------------------------------------
-	//Parse the grammar
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Parse the grammar
+//---------------------------------------------------------------
 		var parser = new Parser(); 
 		parser.parse(src); 
 
@@ -66,71 +81,66 @@ class PEG{
 		rules = sem.rules;
 		errors = sem.errcount; 
 
-	//---------------------------------------------------------------
-	//Quit if parsing failed.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Quit if parsing failed.
+//---------------------------------------------------------------
 		if (errors>0) return;
 
-	//---------------------------------------------------------------
-	//Build expression lists.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Build expression lists.
+//---------------------------------------------------------------
 		makeLists();
 
-	//---------------------------------------------------------------
-	//Resolve name references and quit if error found.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Resolve name references and quit if error found.
+//---------------------------------------------------------------
 		resolve();
 		if (errors>0) return;
 
-	//---------------------------------------------------------------
-	//Compute 'asString' for all nodes.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Compute 'asString' for all nodes.
+//---------------------------------------------------------------
 		reconstruct();
 
-	//---------------------------------------------------------------
-	//Compute attributes and well-formedness.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Compute attributes and well-formedness.
+//---------------------------------------------------------------
 		attributes();
 		computeWF();
 
-	//---------------------------------------------------------------
-	//Diagnose.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Diagnose.
+//---------------------------------------------------------------
 		var diag = new Diagnose();
 		diag.applyTo(this);
 	}
 
 
-// == == == == == == == == ==
-//
-//Compact
-//
-// == == == == == == == == ==
+//----------------------------------------------------------------------
+// Compact
+//----------------------------------------------------------------------
 
 	public function compact()
 	{
-	//---------------------------------------------------------------
-	//Use CompactVisitor to eliminate duplicate expressions
-	//from parse tree. (The result is no longer a tree.)
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Use CompactVisitor to eliminate duplicate expressions
+// from parse tree. (The result is no longer a tree.)
+//---------------------------------------------------------------
 		var compactVisitor = new CompactVisitor();
 		for (r in rules)
 		r.accept(compactVisitor);
 
-	//---------------------------------------------------------------
-	//Build new expression lists.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Build new expression lists.
+//---------------------------------------------------------------
 		makeLists();
 	}
 
 
-// == == == == == == == == ==
-//
-//Show
-//
-// == == == == == == == == ==
 //----------------------------------------------------------------------
-//showRules.
+// Show
+//
+// showRules.
 //----------------------------------------------------------------------
 	public function showRules()
 	{
@@ -140,7 +150,7 @@ class PEG{
 	}
 
 //----------------------------------------------------------------------
-//showAll.
+// showAll.
 //----------------------------------------------------------------------
 	public function showAll()
 	{
@@ -156,7 +166,7 @@ class PEG{
 	}
 
 //----------------------------------------------------------------------
-//Format attributes
+// Format attributes
 //----------------------------------------------------------------------
 	function attrs( e:Expr)
 	{ 
@@ -165,62 +175,56 @@ class PEG{
 	}
 
 
-// == == == == == == == == ==
-//
-//Make Lists
-//
 //----------------------------------------------------------------------
+// Make Lists
 //
-//Make linear lists of expressions contained in the parse tree:
-//inner expressions ('subs'), terminals (terms), references ('refs').
-//
-// == == == == == == == == ==
+// Make linear lists of expressions contained in the parse tree:
+// inner expressions ('subs'), terminals (terms), references ('refs').
+//----------------------------------------------------------------------
 
 	function makeLists()
 	{
-	//---------------------------------------------------------------
-	//Use ListVisitor to build the lists in its local hash sets.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Use ListVisitor to build the lists in its local hash sets.
+//---------------------------------------------------------------
 		var listVisitor = new ListVisitor();
 		for (r in rules) r.accept(listVisitor);
 
-	//---------------------------------------------------------------
-	//Convert the hash sets to arrays.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Convert the hash sets to arrays.
+//---------------------------------------------------------------
 		subs= listVisitor.subs.copy(); 
 		terms = listVisitor.terms.copy();
 		refs= listVisitor.refs.copy();
 	}
 
 
-// == == == == == == == == ==
-//
-//Resolve references.
-//
-// == == == == == == == == ==
+//----------------------------------------------------------------------
+// Resolve references.
+//----------------------------------------------------------------------
 
 	function resolve()
 	{
-	//---------------------------------------------------------------
-	//Mapping from names to Rules.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Mapping from names to Rules.
+//---------------------------------------------------------------
 		var names = new Map<String,Expr.Rule>();
 
-	//---------------------------------------------------------------
-	//Referenced names.
-	//Top rule is assumed referenced.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Referenced names.
+// Top rule is assumed referenced.
+//---------------------------------------------------------------
 		var referenced = new Array<String>();
 		referenced.add(rules[0].name); 
 
-	//---------------------------------------------------------------
-	//Dummy rule - replaces undefined to stop multiple messages.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Dummy rule - replaces undefined to stop multiple messages.
+//---------------------------------------------------------------
 		var dummy = new Expr.Rule(null,null,null,null,null);
 
-	//---------------------------------------------------------------
-	//Build table of Rule names, checking for duplicates.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Build table of Rule names, checking for duplicates.
+//---------------------------------------------------------------
 		for (r in rules){
 			if (names.exists(r.name)) {
 				Sys.println("Error: duplicate name '" + r.name + "'.");
@@ -230,9 +234,9 @@ class PEG{
 			}
 		}
 
-	//---------------------------------------------------------------
-	//Resolve references.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Resolve references.
+//---------------------------------------------------------------
 		for (ref in refs){
 			ref.rule = names.get(ref.name);
 			if (ref.rule == null) {
@@ -244,9 +248,9 @@ class PEG{
 			}
 		}
 
-	//---------------------------------------------------------------
-	//Detect unused rules.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Detect unused rules.
+//---------------------------------------------------------------
 		for (r in rules) {
 			if (!referenced.exists(r.name))
 				Sys.println("Warning: rule '" + r.name + "' is not used.");
@@ -254,39 +258,31 @@ class PEG{
 	}
 
 
-// == == == == == == == == ==
-//
-//Reconstruct Source
-//
 //----------------------------------------------------------------------
+// Reconstruct Source
 //
-//Reconstructs, in a standard form, the source string of each
-//expressions and assigns it to 'asString' field of the Expr object.
-//
-// == == == == == == == == ==
+// Reconstructs, in a standard form, the source string of each
+// expressions and assigns it to 'asString' field of the Expr object.
+//----------------------------------------------------------------------
 
 	function reconstruct()
 	{
-	//---------------------------------------------------------------
-	//Use SourceVisitor to reconstruct source.
-	//---------------------------------------------------------------
+//---------------------------------------------------------------
+// Use SourceVisitor to reconstruct source.
+//---------------------------------------------------------------
 		var sourceVisitor = new SourceVisitor();
 		for (e in rules) e.accept(sourceVisitor);
 	}
 
 
-// == == == == == == == == ==
-//
-//Compute Ford's attributes: nul, adv, fal for all expressions.
-//
 //----------------------------------------------------------------------
+// Compute Ford's attributes: nul, adv, fal for all expressions.
 //
-//Computes nul, adv, and fal attributes for all expressions.
-//For terminals the attributes are preset by the constructor.
-//For other expressions they are computed by iteration to a fixpoint.
-//The AttrVisitor is used for the iteration step.
-//
-// == == == == == == == == ==
+// Computes nul, adv, and fal attributes for all expressions.
+// For terminals the attributes are preset by the constructor.
+// For other expressions they are computed by iteration to a fixpoint.
+// The AttrVisitor is used for the iteration step.
+//----------------------------------------------------------------------
 
 	function attributes()
 	{
@@ -297,45 +293,41 @@ class PEG{
 		var attrVisitor = new AttrVisitor();
 
 		while(true){
-	//-------------------------------------------------------------
-	//Iteration step
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// Iteration step
+//-------------------------------------------------------------
 			for (e in refs)	e.accept(attrVisitor);
 			for (e in subs)	e.accept(attrVisitor);
 			for (e in rules)e.accept(attrVisitor);
 
-	//-------------------------------------------------------------
-	//Count true attributes (non-terminals only)
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// Count true attributes (non-terminals only)
+//-------------------------------------------------------------
 			trueAttrs = 0;
 			for (e in rules) trueAttrs += (e.nul? 1:0) + (e.adv? 1:0) + (e.fal? 1:0);
 			for (e in subs) trueAttrs += (e.nul? 1:0) + (e.adv? 1:0) + (e.fal? 1:0);
 
-	//-------------------------------------------------------------
-	//Break if fixpoint reached
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// Break if fixpoint reached
+//-------------------------------------------------------------
 			if (trueAttrs == a) break;
 
-	//-------------------------------------------------------------
-	//To next step
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// To next step
+//-------------------------------------------------------------
 			a = trueAttrs;
 			iterAt++;
 		}
 	}
 
-// == == == == == == == == ==
-//
-//Compute well-formedness.
-//
 //----------------------------------------------------------------------
+// Compute well-formedness.
 //
-//Computes the WF attribute for all expressions.
-//For terminals the attribute is preset by the constructor.
-//For other expressions it is computed by iteration to a fixpoint.
-//The FormVisitor is used for the iteration step.
-//
-// == == == == == == == == ==
+// Computes the WF attribute for all expressions.
+// For terminals the attribute is preset by the constructor.
+// For other expressions it is computed by iteration to a fixpoint.
+// The FormVisitor is used for the iteration step.
+//----------------------------------------------------------------------
 
 	function computeWF()
 	{
@@ -345,30 +337,30 @@ class PEG{
 		var formVisitor = new FormVisitor();
 
 		while(true){
-	//-------------------------------------------------------------
-	//Iteration step
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// Iteration step
+//-------------------------------------------------------------
 			for (e in refs)	e.accept(formVisitor);
 			for (e in subs)	e.accept(formVisitor);
 			for (e in rules)e.accept(formVisitor);
 
-	//-------------------------------------------------------------
-	//Count not well-formed (non-terminals only)
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// Count not well-formed (non-terminals only)
+//-------------------------------------------------------------
 			notWF = 0;
 			for (e in rules)
 			if (!e.WF) notWF++;
 			for (e in subs)
 			if (!e.WF) notWF++;
 
-	//-------------------------------------------------------------
-	//Break if fixpoint reached
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// Break if fixpoint reached
+//-------------------------------------------------------------
 			if (notWF == s) break;
 
-	//-------------------------------------------------------------
-	//To next step
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+// To next step
+//-------------------------------------------------------------
 			s = notWF;
 			iterWF++;
 		}
@@ -380,23 +372,22 @@ class PEG{
 
 //**********************************************************************
 //
-//ListVisitor - makes lists of expressions
+// ListVisitor - makes lists of expressions
 //
+//----------------------------------------------------------------------
+// Each visit adds the visited expression to its proper list, and
+// then proceeeds to visit all subexpressions, if any.
+// Note that the visitor must also work after 'compact' operation
+// that changed the tree into an acyclic graph. As a result, the
+// visitor may arrive to a node that was already visited.
+// Therefore we collect data in hash sets, and do not visit
+// subexpressions if the node is already listed.
 //**********************************************************************
-//----------------------------------------------------------------------
-//Each visit adds the visited expression to its proper list, and
-//then proceeeds to visit all subexpressions, if any.
-//Note that the visitor must also work after 'compact' operation
-//that changed the tree into an acyclic graph. As a result, the
-//visitor may arrive to a node that was already visited.
-//Therefore we collect data in hash sets, and do not visit
-//subexpressions if the node is already listed.
-//----------------------------------------------------------------------
 
 class ListVisitor extends Visitor{
-//-----------------------------------------------------------------
-//Local lists
-//-----------------------------------------------------------------
+//----------------------------------------------------------------------
+// Local lists
+//----------------------------------------------------------------------
 	public var subs = new Array<Expr>();
 	public var terms = new Array<Expr>();
 	public var refs = new Array<Expr.Ref>();
@@ -500,16 +491,15 @@ class ListVisitor extends Visitor{
 
 //**********************************************************************
 //
-//SourceVisitor - recostructs source strings of expressions
+// SourceVisitor - recostructs source strings of expressions
 //
+//----------------------------------------------------------------------
+// Each visit starts with visiting the subexpressions to construct
+// their source strings. These strings are then used as building
+// blocks to produce the final result. Procedure 'enclose'
+// encloses the subexpression in parentheses if needed, depending
+// on the binding strength of subexpression and containing expression.
 //**********************************************************************
-//----------------------------------------------------------------------
-//Each visit starts with visiting the subexpressions to construct
-//their source strings. These strings are then used as building
-//blocks to produce the final result. Procedure 'enclose'
-//encloses the subexpression in parentheses if needed, depending
-//on the binding strength of subexpression and containing expression.
-//----------------------------------------------------------------------
 
 class SourceVisitor extends Visitor{
 	public override function visitRule( r:Expr.Rule)
@@ -607,9 +597,9 @@ class SourceVisitor extends Visitor{
 
 
 
-	//-----------------------------------------------------------------
-	//Parenthesizing
-	//-----------------------------------------------------------------
+//----------------------------------------------------------------------
+// Parenthesizing
+//----------------------------------------------------------------------
 	function enclose( e:Expr, mybind:Int)
 	{
 		var nest = e.bind() <= mybind;
@@ -621,22 +611,22 @@ class SourceVisitor extends Visitor{
 
 //**********************************************************************
 //
-//CompactVisitor - eliminates duplicate expresions
+// CompactVisitor - eliminates duplicate expresions
 //
+//----------------------------------------------------------------------
+// Each visit examines subexpressions of a visited expression.
+// If it finds the subexpression identical to a previously
+// encountered, replaces the subexpression by the latter.
+// Otherwise, it proceeds to visit the subexpression.
+// Expressions are considered identical if they have the same
+// reconstructed source.
 //**********************************************************************
-//----------------------------------------------------------------------
-//Each visit examines subexpressions of a visited expression.
-//If it finds the subexpression identical to a previously
-//encountered, replaces the subexpression by the latter.
-//Otherwise, it proceeds to visit the subexpression.
-//Expressions are considered identical if they have the same
-//reconstructed source.
-//----------------------------------------------------------------------
+
 class CompactVisitor extends Visitor{
-//-----------------------------------------------------------------
-//Hash table to detect identical expressions.
-//The table maps sources to expressions.
-//-----------------------------------------------------------------
+//----------------------------------------------------------------------
+// Hash table to detect identical expressions.
+// The table maps sources to expressions.
+//----------------------------------------------------------------------
 	var sources = new Map<String,Expr>();
 
 	public override function visitRule(r:Expr.Rule)
@@ -711,11 +701,11 @@ class CompactVisitor extends Visitor{
 		}
 	}
 
-	//-----------------------------------------------------------------
-	//If the 'sources' table already contains an expression with
-	//the same source as 'expr', return that expression.
-	//Otherwise add 'expr' to the table, visit 'expr', and return null.
-	//-----------------------------------------------------------------
+//----------------------------------------------------------------------
+// If the 'sources' table already contains an expression with
+// the same source as 'expr', return that expression.
+// Otherwise add 'expr' to the table, visit 'expr', and return null.
+//----------------------------------------------------------------------
 	function alias( expr:Expr)
 	{
 		var source = expr.asString;
@@ -731,14 +721,13 @@ class CompactVisitor extends Visitor{
 
 //**********************************************************************
 //
-//AttrVisitor - computes Ford's attributes
+// AttrVisitor - computes Ford's attributes
 //
+//----------------------------------------------------------------------
+// Each visit computes attributes from those of subexpressions.
+// Attributes for terminals are preset by their constructors.
+// The visitor does not climb down the parse tree.
 //**********************************************************************
-//----------------------------------------------------------------------
-//Each visit computes attributes from those of subexpressions.
-//Attributes for terminals are preset by their constructors.
-//The visitor does not climb down the parse tree.
-//----------------------------------------------------------------------
 
 class AttrVisitor extends Visitor{
 	public override function visitRule( expr:Expr.Rule)
@@ -810,23 +799,23 @@ class AttrVisitor extends Visitor{
 		var e1 = expr.expr1;
 		var e2 = expr.expr2;
 
-	// Computed as for (!e2 e1)(!e2 e1)* e2
-	// Attributes of !e2 e1
+// Computed as for (!e2 e1)(!e2 e1)* e2
+// Attributes of !e2 e1
 		var nul1 = e2.fal && e1.nul;
 		var adv1 = e2.fal && e1.adv;
 		var fal1 = e2.nul || e2.adv;
 
-	// Attributes of (!e2 e1)*
+// Attributes of (!e2 e1)*
 		var nul2 = fal1;
 		var adv2 = adv1;
 		var fal2 = false;
 
-	// Attributes of (!e2 e1)* e2
+// Attributes of (!e2 e1)* e2
 		var nul3 = nul2 && e2.nul;
 		var adv3 = (nul2 && e2.adv) || (adv2 && e2.adv) || (adv2 && e2.nul);
 		var fal3 = fal2 || ((nul2 || adv2) && e2.fal);
 
-	// Attributes of (!e2 e1)(!e2 e1)* e2
+// Attributes of (!e2 e1)(!e2 e1)* e2
 		expr.nul = nul1 && nul3;
 		expr.adv = (nul1 && adv3) || (adv1 && adv3) || (adv1 && nul3);
 		expr.fal = fal1 || ((nul1 || adv1) && fal3);
@@ -837,17 +826,17 @@ class AttrVisitor extends Visitor{
 		var e1 = expr.expr1;
 		var e2 = expr.expr2;
 
-	// Computed as for (!e2 e1)* e2
-	// Attributes of !e2 e1
+// Computed as for (!e2 e1)* e2
+// Attributes of !e2 e1
 		var adv1 = e2.fal && e1.adv;
 		var fal1 = e2.nul || e2.adv;
 
-	// Attributes of (!e2 e1)*
+// Attributes of (!e2 e1)*
 		var nul2 = fal1;
 		var adv2 = adv1;
 		var fal2 = false;
 
-	// Attributes of (!e2 e1)* e2
+// Attributes of (!e2 e1)* e2
 		expr.nul = nul2 && e2.nul;
 		expr.adv = (nul2 && e2.adv) || (adv2 && e2.adv) || (adv2 && e2.nul);
 		expr.fal = fal2 || ((nul2 || adv2) && e2.fal);
@@ -885,14 +874,13 @@ class AttrVisitor extends Visitor{
 
 //**********************************************************************
 //
-//FormVisitor - computes WellFormed attribute
+// FormVisitor - computes WellFormed attribute
 //
+//----------------------------------------------------------------------
+// Each visit computes the attribute from those of subexpressions.
+// Attributes for terminals are preset by their constructors.
+// The visitor does not climb down the parse tree.
 //**********************************************************************
-//----------------------------------------------------------------------
-//Each visit computes the attribute from those of subexpressions.
-//Attributes for terminals are preset by their constructors.
-//The visitor does not climb down the parse tree.
-//----------------------------------------------------------------------
 
 class FormVisitor extends Visitor{
 

@@ -1,13 +1,30 @@
 package ;
 
+#if flash
+import flash.display.*;
+import flash.events.*;
+import flash.Lib;
+#end
+
 import ParserBase.Source;
 import ParserBase.Cache;
 
 
 @:dce
+#if flash
+class App extends Sprite{
+#else
 class App{
-	
-	public function new(){ }
+#end	
+	public function new()
+	{ 
+#if flash
+		super();
+		addEventListener (Event.ADDED_TO_STAGE, addedToStage);
+		Lib.current.addChild (this);
+#else
+#end		
+	}
 	
 	public function run()
 	{
@@ -16,7 +33,7 @@ class App{
 		if (s == null) return;
 		var src = new Source(s);
 
-		var s = "Source : " + name + " [" + src.end() + " bytes]";
+		var s = "\nSource : " + name + " [" + src.end() + " bytes]";
 
 		var t0 = haxe.Timer.stamp();
 //		Cache.size = 3;
@@ -36,7 +53,9 @@ class App{
 	public static function main()
 	{
 		var p = new App();
+#if !flash		
 		p.run();
+#end		
 	}	
 
 	function println(s:String)
@@ -49,5 +68,28 @@ class App{
 		Sys.println(s); 
 #end		
 	}
+
+#if flash
+	function addedToStage(e:Event) 
+	{
+		stage.align = StageAlign.TOP_LEFT;
+		stage.scaleMode = StageScaleMode.NO_SCALE;
+
+		addEventListener(Event.ENTER_FRAME, onEnterFrame);
+		stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);   
+		stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp); 
+
+		trace("Press any key to run the Parser.");
+	}// addedToStage()
 	
+	function onEnterFrame(e:Event) { }
+
+	function onKeyUp(e:KeyboardEvent){ 	}
+
+	function onKeyDown(e:KeyboardEvent)
+	{	 
+		run();
+	}
+
+#end	
 }
